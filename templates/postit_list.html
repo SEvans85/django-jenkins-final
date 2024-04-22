@@ -1,0 +1,25 @@
+<!-- postit_list.html -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PostIt List</title>
+</head>
+<body>
+    <h1>PostIt List</h1>
+
+    <!-- Form to add a new PostIt -->
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Add PostIt</button>
+    </form>
+
+    <!-- Display existing PostIts -->
+    <ul>
+        {% for postit in postits %}
+            <li>{{ postit.name }} - {{ postit.subject }} - {{ postit.details }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
