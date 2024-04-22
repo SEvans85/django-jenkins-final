@@ -1,0 +1,73 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    if (fileExists('/var/lib/jenkins/workspace/django-project/django-jenkins')) {
+                        sh 'rm -rf /var/lib/jenkins/workspace/django-project/django-jenkins'
+                    }
+                    sh '''
+                    git clone https://github.com/SEvans85/django-jenkins.git
+                    '''
+                }
+            }
+        }
+        
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                cd /var/lib/jenkins/workspace/django-project/django-jenkins
+                pip install -r requirements.txt
+                '''
+            }
+        }
+        
+        stage('Run Tests') {
+            steps {
+                // Run Django tests
+                sh '''
+                cd /var/lib/jenkins/workspace/django-project/django-jenkins
+                python3 manage.py test
+                '''
+            }
+        }
+        
+        stage('SonarQube Analysis') {
+            steps {
+                // Change directory to the project directory
+                dir('/var/lib/jenkins/workspace/django-project/django-jenkins') {
+                    // Run SonarQube analysis
+                    sh '''
+                    sonar-scanner -X \
+                    -Dsonar.projectKey=django-project \
+                    -Dsonar.sources=. \
+                    -Dsonar.host.url=http://13.40.79.48:9000 \
+                    -Dsonar.token=sqa_19a00179b1ebc87ddf7b714e57bedead0e7fe7d9
+                    '''
+                }
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                // Perform any additional build steps (e.g., collect static files)
+                sh '''
+                cd /var/lib/jenkins/workspace/django-project/django-jenkins
+                python3 manage.py collectstatic --no-input
+                '''
+            }
+        }
+        
+        stage('Deploy with Docker Compose') {
+            steps {
+                // Run Docker Compose
+                sh '''
+                cd /var/lib/jenkins/workspace/django-project/django-jenkins
+                docker-compose up -d
+                '''
+            }
+        }
+    }
+}
